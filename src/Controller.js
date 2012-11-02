@@ -28,6 +28,7 @@ Controller.prototype.onParamChange = function () {};
 Controller.prototype.onComplete = function () {};
 Controller.prototype.onBind = function () {};
 Controller.prototype.onIntercept = function () {};
+Controller.prototype.onTimeout = function(errType, service, params){};
 
 Controller.prototype.params = {};
 

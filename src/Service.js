@@ -29,7 +29,7 @@ mojo.define('mojo.Service', function Service($) {
     this.options = $.extend({}, defaults, options);
   };
 
-  Service.prototype.invoke = function (params, callback, scope) {
+  Service.prototype.invoke = function (params, callback, scope, timeoutOpts) {
 
     var self = this;
 
@@ -37,6 +37,7 @@ mojo.define('mojo.Service', function Service($) {
                   method = options.method,
                   uri = self.getURI(),
                   responseType = options.responseType || 'JSON';
+    timeoutOpts = timeoutOpts||{};
 
     if ('undefined' == typeof callback || !callback) throw new Error("'callback' is a required parameter");
 
@@ -48,6 +49,7 @@ mojo.define('mojo.Service', function Service($) {
     $.ajaxSetup({
       dataTypeString: responseType,
       dataType: options.jsonp ? 'jsonp' : responseType,
+      timeout: timeoutOpts.expire || 15000,
       type: method,
       async: options.async || true,
       cache: options.cache || false,
@@ -87,7 +89,16 @@ mojo.define('mojo.Service', function Service($) {
         }
       }
     }).error(function () {
-      if ('undefined' != typeof callback) {
+      if( errorType == 'timeout' ){
+
+        if(  typeof timeoutOpts.callback == 'function' ){
+          timeoutOpts.callback.call((scope||this), errorType, self, params);
+        // default Controller prototype call
+        } else if( scope && typeof scope.onTimeout == 'function' ){
+          scope.onTimeout.call((scope||this), errorType, self, params);
+        }
+
+      } else if ('undefined' != typeof callback) {
         mojo.Messaging.publish("mojo.Service." + self.getName(), { response: data, service: self });
         callback.apply(scope || this, arguments);
       }
